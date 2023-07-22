@@ -1,0 +1,212 @@
+doctype html
+html
+  head
+    meta(charset='utf-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1, shrink-to-fit=no')
+    link(rel='stylesheet', href='https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css', integrity='sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO', crossorigin='anonymous')
+    script(src='https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js')
+    script(src='https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js', integrity='sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49', crossorigin='anonymous')
+    script(src='https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js', integrity='sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy', crossorigin='anonymous')
+    title My Schedule
+  body
+    nav.navbar.navbar-expanded.navbar-light.bg-light
+      ul.nav.nav-pills
+        li.nav-item
+          a.nav-link(href='/') Home
+        li.nav-item.active
+          a.nav-link.active(href='/schedule') Schedule
+        li.nav-item
+          a.nav-link(href='/addEvent')
+            | Add
+            | Event
+        li.nav-item
+          a.nav-link(href='/logout')  Logout 
+    br
+    .container.mb-5
+      .alert.alert-secondary(role='alert')
+        | Click on a day to see its events
+    .container.mb-3
+      ul#days.nav.nav-tabs.nav-fill
+        li.nav-item
+          a.nav-link(onclick='formTable(this)') Sunday
+        li.nav-item
+          a.nav-link(onclick='formTable(this)') Monday
+        li.nav-item
+          a.nav-link(onclick='formTable(this)') Tuesday
+        li.nav-item
+          a.nav-link(onclick='formTable(this)') Wednesday
+        li.nav-item
+          a.nav-link(onclick='formTable(this)') Thursday
+        li.nav-item
+          a.nav-link(onclick='formTable(this)') Friday
+        li.nav-item
+          a.nav-link(onclick='formTable(this)') Saturday
+      br
+      br
+      .container
+        table#scheduleTable.table.table-striped
+          thead
+            tr
+              th(scope='col') Name
+              th(scope='col') Time
+              th(scope='col') End
+              th(scope='col') Location
+              th(scope='col') Phone
+              th(scope='col') Extra Information
+              th(scope='col')  URL 
+          tbody#scheduleTableBody
+    script.
+      var scheduleData = [];
+      function formTable(element) {
+        $('#days li a').removeClass("active");
+        $(element).addClass("active");
+        clearTable();
+        let day = $(element).text();
+        fetch('/getSchedule')
+          .then(response => response.json())
+          .then(scheduleJson => {
+            var tb = document.getElementById("scheduleTableBody");
+            tb.innerHTML = "";
+            scheduleData = [];
+            for (var i = 0; i < scheduleJson.length; i++) {
+              if (scheduleJson[i].event_day == day) {
+                let tableRow = document.createElement("tr"); // Use "let" instead of "var" for block-level scoping
+                for (var property in scheduleJson[i]) {
+                  if (property != "event_id" && property != "event_day") {
+                    var tableCol = document.createElement("td");
+                    tableCol.innerHTML = scheduleJson[i][property];
+                    tableRow.appendChild(tableCol);
+                  }
+                }
+                tb.appendChild(tableRow);
+                scheduleData.push(scheduleJson[i]);
+                console.log("here1");
+                let deleteButton = document.createElement("button");
+                deleteButton.innerHTML = "Delete";
+                deleteButton.style.display = "none"; // Hide the delete button initially
+                deleteButton.id = "delete-button";
+                deleteButton.style.padding = "4px 8px";
+                deleteButton.style.backgroundColor = "#ff8080";
+                deleteButton.style.color = "white";
+                deleteButton.style.fontWeight = "bold";
+                deleteButton.style.borderRadius = "4px";
+                deleteButton.style.border = "none";
+
+                let editButton = document.createElement("button");
+                editButton.style.padding = "4px 8px";
+                editButton.style.display = "none"; // Hide the edit button initially
+                editButton.id = "edit-button";
+                editButton.style.fontWeight = "bold";
+                editButton.style.borderRadius = "4px";
+                editButton.style.backgroundColor = "#a6e9ff";
+                editButton.style.color = "white";
+                editButton.innerHTML = "Edit";
+                editButton.style.border = "none";
+                
+                eventId = scheduleJson[i]["event_id"];
+                let returner = "?event_id=" + scheduleJson[i]["event_id"] +
+                        "&event=" + scheduleJson[i]["event_event"] +
+                        "&day=" + scheduleJson[i]["event_day"] +
+                        "&start=" + scheduleJson[i]["event_start"] +
+                        "&end=" + scheduleJson[i]["event_end"] +
+                        "&phone=" + scheduleJson[i]["event_phone"] +
+                        "&location=" + scheduleJson[i]["event_location"] +
+                        "&info=" + scheduleJson[i]["event_info"] +
+                        "&url=" + scheduleJson[i]["event_url"];
+                //alert("here" + " " + eventId);
+                //alert(" " + returner);
+                const buildQueryString = 
+                deleteButton.addEventListener("click", function(event) {
+                  fetch("/deleteEvent/" + eventId, {
+                    method: 'DELETE'
+                  })
+                    .then(response => {
+                      if (response.ok) {
+                        console.log('Event deleted successfully');
+                        // Handle any further actions after successful deletion
+                        tableRow.remove();
+                      } else if (response.status === 404) {
+                        console.log('Event not found');
+                        // Handle event not found error
+                      } else {
+                        console.log('Error deleting event');
+                        // Handle other errors
+                      }
+                    })
+                    .catch(error => console.error('Error deleting event:', error));
+                });
+
+               editButton.addEventListener("click", function(event) {
+                alert("edit the event");
+                alert("returner")
+                fetch("/editEvent/" + eventId, {
+                  method: "GET",
+                  headers: { "Content-type": "application/json" }
+                })
+                  .then(response => {
+                    if (response.ok) {
+                      alert(" " + returner);
+                      window.location.href = "/editEvent"+returner;
+                      return response.json();
+                    }
+                  })
+                  .catch(error => console.log("Error on edit Event: " + error));
+              });
+
+              tableRow.addEventListener("mouseenter", function() {
+                this.querySelector("#delete-button").style.display = "inline-block";
+                this.querySelector("#edit-button").style.display = "inline-block";
+              });
+
+              tableRow.addEventListener("mouseleave", function() {
+                this.querySelector("#delete-button").style.display = "none";
+                this.querySelector("#edit-button").style.display = "none";
+              });
+
+              tableRow.appendChild(deleteButton);
+              tableRow.appendChild(editButton);
+            }
+          }
+        })
+        .catch(error => console.log("Error: " + error));
+      }
+      /*
+      fetch("getSchedule_" + day)
+      .then(response => {
+      return response.text();
+      })
+      .then(html => {
+      let jsonFile = JSON.parse(html);
+      console.log(jsonFile);
+      let row = "";
+      for (var i = 0; i < jsonFile.length; i++) {
+      let s = "";
+      let e = "";
+      let demarkerStart = "AM";
+      if (parseInt(jsonFile[i].start.split(":")[0]) > 11) {
+      demarkerStart = "PM";
+      } else {
+      demarkerStart = "AM";
+      }
+      let demarkerEnd = "AM";
+      if (parseInt(jsonFile[i].end.split(":")[0]) > 11) {
+      demarkerEnd = "PM";
+      } else {
+      demarkerEnd = "AM";
+      }
+      row += "<tr>" +
+      "<td>" + jsonFile[i].name + "</td>" +
+      "<td>" + jsonFile[i].start + demarkerStart + ' - ' + jsonFile[i].end + demarkerEnd + "</td>" +
+      "<td>" + jsonFile[i].location + "</td>" +
+      "<td>" + jsonFile[i].phone + "</td>" +
+      "<td><a href =" + jsonFile[i].url + ">" + jsonFile[i].info + "</a></td>" +
+      "</tr>";
+      }
+      $('#scheduleTable tbody').append(row);
+      })
+      .catch(error => console.log("The request has failed", error));
+      }
+      */
+      function clearTable() {
+      $('#scheduleTable tbody').empty();
+      }

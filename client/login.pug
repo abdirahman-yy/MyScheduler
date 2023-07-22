@@ -1,0 +1,54 @@
+doctype html
+html
+  head
+    meta(charset='utf-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1')
+    | &#x9;    
+    link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css')
+    | &#x9;    
+    script(src='https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js')
+    | &#x9;    
+    script(src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js')
+    | &#x9;    
+    link(rel='stylesheet', type='text/css', href='client/css/style.css')
+    title  Login Page 
+    | &#x9;    
+    style(type='text/css').
+      .jumbotron { text-align: center; }
+  body
+    .jumbotron(style='background: DarkSeaGreen !important')
+      h1  Login Page 
+      p Please enter your username and password. BOth are case sensitive.
+    form#FORM
+      lable(style='justify-content: center;', for='username')  Username: 
+      input#username(style='justify-content: center;', name='username', type='text', required='')
+      br
+      lable(style='justify-content: center;', for='password')  Password: 
+      input#password(style='justify-content: center;', name='password', type='text', required='')
+      br
+      button#submit(style='justify-content: center;', type='submit')  Login 
+    script.
+      const FORM = document.getElementById('FORM');
+      // saved for later:  https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie
+      FORM.addEventListener('submit', (event) => {
+      event.preventDefault();
+      fetch('/sendLoginDetails', {
+      method:"POST",
+      body: JSON.stringify({
+      username: document.getElementById("username").value,
+      password: document.getElementById("password").value
+      }),
+      headers: {"Content-Type": "application/json"}
+      }).then(response => {
+      return response.json();
+      }).then(data => {
+      console.log(JSON.stringify(data));
+      if (data.success == "true") {
+      window.location.href = "schedule";
+      } else {
+      alert("Invalid username or password. Please try again!");
+      document.getElementById("username").value = "";
+      document.getElementById("password").value = "";
+      }
+      }).catch(error => console.error(error));
+      });
